@@ -4,7 +4,7 @@
 
 #### Установка MinIO
 
-`wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20241213221912.0.0_amd64.deb -O minio.deb`
+`wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20241213221912.0.0_amd64.deb -O minio.deb`  
 `sudo dpkg -i minio.deb`
 
 #### Установка нужных образов
@@ -14,7 +14,7 @@
 Или установите его через shell.
 
 Получим нужные для эксперимента образы:
-`sudo docker pull python:3-slim`
+`sudo docker pull python:3-slim`  
 `sudo docker pull minio/minio`
 
 #### Важные настройки
