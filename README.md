@@ -5,41 +5,49 @@
 #### Установка MinIO
 
 `wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20241213221912.0.0_amd64.deb -O minio.deb`  
-`sudo dpkg -i minio.deb`
+`sudo dpkg -i minio.deb`  
 
 #### Установка нужных образов
 
 Если у Вас не установлен docker, то можете его установить здесь:
-**https://docs.docker.com/get-started/get-docker/**
+**https://docs.docker.com/get-started/get-docker/**  
 Или установите его через shell.
 
 Получим нужные для эксперимента образы:
 `sudo docker pull python:3-slim`  
-`sudo docker pull minio/minio`
+`sudo docker pull minio/minio`  
 
 #### Важные настройки
 
-В репозитории есть предустановленные настройки контейнеров в *docker-compose.yml* и *Dockerfile*
-Для эксперимента берём например ограничение по памяти диска в 200 МБ  
-Советую разместить всё содержимое репозитория в отдельную папку в ~/Clouds  
+В репозитории есть предустановленные настройки контейнеров в *docker-compose.yml* и *Dockerfile*.
+Для эксперимента берём например ограничение по памяти диска в 200 МБ.  
+Советую разместить всё содержимое репозитория в отдельную папку ~/Clouds (дальше считаем, что всё из репозитория находится в папке ~/Clouds)  
+
+
 Теперь очень важная вещь: выделим специально под контейнер с MinIO часть диска:  
-`sudo docker volume create --driver local --opt type=tmpfs --opt device=tmpfs --opt o=size=200m clouds_minio_data`
+`sudo docker volume create --driver local --opt type=tmpfs --opt device=tmpfs --opt o=size=200m clouds_minio_data`  
+
 После эксперимента её можно восстановить с помощью команды:
-`sudo docker volume rm clouds_minio_data`
-Дальше считаем, что всё из репозитория находится в папке ~/Clouds
+`sudo docker volume rm clouds_minio_data`  
 
 #### Эксперимент
 
 Заходим в папку для эксперимента:
-`cd ~/Clouds`
-"Построим" наши контейнеры
-`sudo docker-compose build`
+`cd ~/Clouds`  
+
+"Построим" наши контейнеры:
+`sudo docker-compose build`  
+
 Если всё хорошо, то всё сработает, только возможно будет предупреждение по поводу ENV. Это не страшно.  
 Создайте папку files:
-`mkdir files`
+
+`mkdir files`  
+
 В папке files должны быть расположены файлы, которые будут посылаться на MinIO (см примечание). Нужно загрузить туда файлы с суммой размеров больше 200 МБ.
-Дальше для запуска контейнеров нужно прописать
-`sudo docker-compose up`
+Дальше для запуска контейнеров нужно прописать  
+
+`sudo docker-compose up`  
+
 Чтобы своими глазами увидеть содержимое сервера MinIO, введите в браузере **http://localhost:9001**.  
 Логин: **myaccesskey**  
 Пароль: **mysecretkey**  
@@ -47,7 +55,9 @@
 Как всё просмотрели и закончили, вырубаем контейнеры сочетанием Ctrl+C
 
 Если закончилась память в хранилище MinIO, то от MinIO в командной строке (и / или в **sudo docker logs minio** после Ctrl+C) будет написано следующее:
-`Error: no space left on device (syscall.Errno)`
+
+`Error: no space left on device (syscall.Errno)`  
+
 Отправленные в это время файлы не сохраняются нигде и потом не досылаются, если освободить память.  
 Выходит, что сервер просто игнорирует файлы, если память закончилась.  
 
@@ -55,17 +65,23 @@
 а дальше создаём bucket (что-то типа папки в хранилище), и посылаем файлы по одному из директории files. Файлы разбиваются на несколько блоков (примерно по 5 МБ), 
 и отправляются на сервер.  
 Когда место в хранилище закончится, от питоновского приложения будет написано в командной строке (и / или в **sudo docker logs python-app** после Ctrl+C):
+
 `S3 operation failed; code: IncompleteBody, message: You did not provide the number of bytes specified by the Content-Length HTTP header.`
+
 Это будет, если пытаемся заслать большой файл. Причина, возможно, в том, что он разбивается на блоки, 
 но приложение не может заслать все блоки и выходит неполная картина (Incomplete Body)  
+
 `S3 operation failed; code: InsufficientStorage, message: No space left on device`
+
 Эта ошибка возникнет, когда мы попытаемся заслать маленький файл (скорее всего, влезающий в 1 блок)  
 
 Итог: Выскочит ошибка. Файлы не пытаются дослаться, даже если место после ошибки будет освобождено. Если она не перехватывается, то приложение завершается с кодом 1. 
 
-Стоит затем очистить память в выделенной части диска, и сделать
+Стоит затем очистить память в выделенной части диска, и сделать  
+
 `sudo docker-compose down`
-И также напомню про
+
+И также напомню про  
 `sudo docker volume rm clouds_minio_data`
 
 
