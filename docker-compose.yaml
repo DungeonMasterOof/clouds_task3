@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # MinIO service
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ACCESS_KEY=myaccesskey
+      - MINIO_SECRET_KEY=mysecretkey
+    volumes:
+      - clouds_minio_data:/data
+    ports:
+      - "9000:9000"  # MinIO API port
+      - "9001:9001"  # MinIO Console port
+    command: "server /data --console-address :9001" 
+    # MinIO starts the server with port 9001 
+
+  # Python application service
+  python-app:
+    build: .
+    container_name: python-app
+    depends_on:
+      - minio  # Wait until MinIO is ready before starting the Python app
+    environment:
+      - MINIO_ACCESS_KEY=myaccesskey
+      - MINIO_SECRET_KEY=mysecretkey
+    volumes:
+      - ./files:/app/input_files  # Mount local "my_files/" directory to "/app/input_files" in the container
+      
+volumes:
+  clouds_minio_data:
+    external: true
