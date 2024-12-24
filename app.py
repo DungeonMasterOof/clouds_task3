@@ -66,7 +66,10 @@ def upload_files_to_minio(client, bucket_name, input_dir):
 if __name__ == "__main__":
     # Connecting to MinIO
     minio_client = connect_to_minio()
+    # Waiting for launch.sh to execute
 
     if minio_client:
         create_bucket(minio_client, BUCKET_NAME)
+        time.sleep(5)
+        print("Waiting for all settings to set up...")
         upload_files_to_minio(minio_client, BUCKET_NAME, INPUT_DIR)
